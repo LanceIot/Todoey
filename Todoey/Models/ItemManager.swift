@@ -21,19 +21,28 @@ struct ItemManager {
     
     static var shared = ItemManager()
     
-    func fetchItems(with text: String = "", _ section: Int) {
+    func fetchItems(with text: String = "", section: TodoeySection) {
         do {
             let request = Todoeyitem.fetchRequest()
             if text != "" {
-                let predicate = NSPredicate(format: "name CONTAINS %@", text)
-                request.predicate = predicate
+                let namePredicate = NSPredicate(format: "name CONTAINS[c] %@", text)
+                let sectionPredicate = NSPredicate(format: "section == %@", section)
+                let isCompletedPredicate = NSPredicate(format: "isCompleted == %@", "False")
+                
+                let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [namePredicate, sectionPredicate, isCompletedPredicate])
+                request.predicate = compoundPredicate
+            } else {
+                let sectionPredicate = NSPredicate(format: "section == %@", section)
+                let isCompletedPredicate = NSPredicate(format: "isCompleted == %@", "False")
+
+                let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [sectionPredicate, isCompletedPredicate])
+                request.predicate = compoundPredicate
+                
             }
             
-            let predicate = NSPredicate(format: "sect = %d", section)
-            request.predicate = predicate
-            
-            let desc = NSSortDescriptor(key: "name", ascending: true)
-            request.sortDescriptors = [desc]
+            let sortDescPriority = NSSortDescriptor(key: "priority", ascending: true)
+            let sortDescName = NSSortDescriptor(key: "name", ascending: true)
+            request.sortDescriptors = [sortDescPriority, sortDescName]
             
             let models = try context.fetch(request)
             delegate?.didUpdateItems(with: models)
@@ -42,61 +51,51 @@ struct ItemManager {
         }
     }
     
-    func createItem(with name: String, _ section: Int) {
+    func createItem(name: String, desc: String, priority: Int16, imageData: Data, section: TodoeySection) {
         let newItem = Todoeyitem(context: context)
         newItem.name = name
+        newItem.desc = desc
+        newItem.priority = priority
         newItem.createdAt = Date()
-        newItem.sect = Int32(section)
+        newItem.image = imageData
+        newItem.isCompleted = false
+        section.addToItems(newItem)
         do {
             try context.save()
-            let request = Todoeyitem.fetchRequest()
-            
-            let predicate = NSPredicate(format: "sect = %d", section)
-            request.predicate = predicate
-            
-            let desc = NSSortDescriptor(key: "name", ascending: true)
-            request.sortDescriptors = [desc]
-            
-            let models = try context.fetch(request)
-            delegate?.didUpdateItems(with: models)
+            fetchItems(section: section)
         } catch {
-            print("Following error appeared: ", error)
+            delegate?.didFailWith(with: error)
         }
     }
     
-    func deleteItem(item: Todoeyitem, _ section: Int) {
+    func completeItem(item: Todoeyitem) {
+        do {
+            item.isCompleted = true
+            try context.save()
+            fetchItems(section: item.section!)
+        } catch {
+            delegate?.didFailWith(with: error)
+        }
+    }
+    
+    func deleteItem(item: Todoeyitem, section: TodoeySection) {
         context.delete(item)
         do {
             try context.save()
-            let request = Todoeyitem.fetchRequest()
-            
-            let predicate = NSPredicate(format: "sect = %d", section)
-            request.predicate = predicate
-            
-            let desc = NSSortDescriptor(key: "name", ascending: true)
-            request.sortDescriptors = [desc]
-            
-            let models = try context.fetch(request)
-            delegate?.didUpdateItems(with: models)
+            fetchItems(section: section)
         } catch {
-            print(error)
+            delegate?.didFailWith(with: error)
         }
     }
     
-    func updateItem(item: Todoeyitem, newName: String, _ section: Int) {
-        item.name = newName
+    func updateItem(item: Todoeyitem, newName: String, desc: String, imageData: Data, priority: Int16) {
         do {
+            item.name = newName
+            item.desc = desc
+            item.priority = priority
+            item.image = imageData
             try context.save()
-            let request = Todoeyitem.fetchRequest()
-            
-            let predicate = NSPredicate(format: "sect = %d", section)
-            request.predicate = predicate
-            
-            let desc = NSSortDescriptor(key: "name", ascending: true)
-            request.sortDescriptors = [desc]
-            
-            let models = try context.fetch(request)
-            delegate?.didUpdateItems(with: models)
+            fetchItems(section: item.section!)
         } catch {
             print(error)
         }

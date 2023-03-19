@@ -2,7 +2,7 @@
 //  Todoeyitem+CoreDataProperties.swift
 //  
 //
-//  Created by Админ on 08.03.2023.
+//  Created by Админ on 19.03.2023.
 //
 //
 
@@ -17,8 +17,11 @@ extension Todoeyitem {
     }
 
     @NSManaged public var createdAt: Date?
+    @NSManaged public var desc: String?
+    @NSManaged public var isCompleted: Bool
     @NSManaged public var name: String?
-    @NSManaged public var sect: Int32
+    @NSManaged public var priority: Int16
+    @NSManaged public var image: Data?
     @NSManaged public var section: TodoeySection?
 
 }

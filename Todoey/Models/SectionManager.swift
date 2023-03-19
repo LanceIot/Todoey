@@ -38,15 +38,10 @@ struct SectionManager {
     func createSection(with name: String) {
         let newSection = TodoeySection(context: context)
         newSection.name = name
+        newSection.createdAt = Date()
         do {
             try context.save()
-            let request = TodoeySection.fetchRequest()
-            
-            let desc = NSSortDescriptor(key: "name", ascending: true)
-            request.sortDescriptors = [desc]
-            
-            let models = try context.fetch(request)
-            delegate?.didUpdateSections(with: models)
+            fetchSections()
         } catch {
             print("Following error appeared: ", error)
         }
@@ -56,13 +51,7 @@ struct SectionManager {
         context.delete(section)
         do {
             try context.save()
-            let request = TodoeySection.fetchRequest()
-            
-            let desc = NSSortDescriptor(key: "name", ascending: true)
-            request.sortDescriptors = [desc]
-            
-            let models = try context.fetch(request)
-            delegate?.didUpdateSections(with: models)
+            fetchSections()
         } catch {
             print(error)
         }
@@ -72,13 +61,7 @@ struct SectionManager {
         section.name = newName
         do {
             try context.save()
-            let request = TodoeySection.fetchRequest()
-            
-            let desc = NSSortDescriptor(key: "name", ascending: true)
-            request.sortDescriptors = [desc]
-            
-            let models = try context.fetch(request)
-            delegate?.didUpdateSections(with: models)
+            fetchSections()
         } catch {
             print(error)
         }

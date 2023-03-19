@@ -11,9 +11,10 @@ final class SectionViewController: UIViewController {
     
     private var sections = [TodoeySection]()
     
+    private lazy var contentView = UIView()
+    
     private lazy var sectionTableView: UITableView = {
        let tableView = UITableView()
-        tableView.separatorStyle = .none
         tableView.register(TodoeyTableViewCell.self, forCellReuseIdentifier: TodoeyTableViewCell.IDENTIFIER)
         return tableView
     }()
@@ -25,7 +26,7 @@ final class SectionViewController: UIViewController {
         SectionManager.shared.fetchSections()
         
         configureNavBar()
-        view.backgroundColor = .systemMint
+        view.backgroundColor = .systemBackground
         
         sectionTableView.dataSource = self
         sectionTableView.delegate = self
@@ -35,8 +36,21 @@ final class SectionViewController: UIViewController {
     }
 }
 
+//MARK: - Section Manager delegate methods
+extension SectionViewController: SectionManagerDelegate {
+    
+    func didUpdateSections(with models: [TodoeySection]) {
+        self.sections = models
+        
+        DispatchQueue.main.async {
+            self.sectionTableView.reloadData()
+        }
+    }
+}
+
 //MARK: - Private controller methods
 private extension SectionViewController {
+    
     func configureNavBar() {
         navigationItem.title = "Todoey"
         let add = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addButtonPressed))
@@ -50,22 +64,11 @@ private extension SectionViewController {
         alert.addTextField()
         alert.addAction(UIAlertAction(title: "Submit", style: .cancel, handler: { _ in
             guard let field = alert.textFields?.first, let text = field.text, !text.isEmpty else {return}
+            
             SectionManager.shared.createSection(with: text)
         }))
         
         present(alert, animated: true)
-    }
-}
-
-//MARK: - Section manager delegate methods
-
-extension SectionViewController: SectionManagerDelegate {
-    func didUpdateSections(with models: [TodoeySection]) {
-        self.sections = models
-        
-        DispatchQueue.main.async {
-            self.sectionTableView.reloadData()
-        }
     }
 }
 
@@ -78,7 +81,7 @@ extension SectionViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: TodoeyTableViewCell.IDENTIFIER, for: indexPath) as! TodoeyTableViewCell
         cell.selectionStyle = .none
-        cell.configure(name: sections[indexPath.row].name!)
+        cell.configure(with: sections[indexPath.row])
         return cell
     }
 }
@@ -90,14 +93,17 @@ extension SectionViewController: UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let viewController = ItemViewController(selectedSection: indexPath.row)
+        let viewController = ItemViewController()
+        
+        viewController.configure(with: self.sections[indexPath.row])
         navigationController?.pushViewController(viewController, animated: true)
     }
     
-    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        return UISwipeActionsConfiguration(actions: [UIContextualAction(style: .destructive, title: "Delete", handler: { _, _, _ in
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {        
+        let deleteAction = UIContextualAction(style: .destructive, title: "Delete", handler: { _, _, _ in
             SectionManager.shared.deleteSection(section: self.sections[indexPath.row])
-        }), UIContextualAction(style: .normal, title: "Edit", handler: { _, _, _ in
+        })
+        let editAction = UIContextualAction(style: .normal, title: "Edit", handler: { _, _, _ in
             let alert = UIAlertController(title: "Update Section", message: "Update your section", preferredStyle: .alert)
             alert.addTextField()
             alert.textFields?.first?.text = self.sections[indexPath.row].name
@@ -107,7 +113,12 @@ extension SectionViewController: UITableViewDelegate {
             }))
             
             self.present(alert, animated: true)
-        })])
+        })
+        editAction.image = UIImage(systemName: "square.and.pencil")
+        deleteAction.image = UIImage(systemName: "trash.fill")
+        let config = UISwipeActionsConfiguration(actions: [deleteAction, editAction])
+        config.performsFirstActionWithFullSwipe = true
+        return config
     }
 }
 
@@ -115,12 +126,18 @@ extension SectionViewController: UITableViewDelegate {
 private extension SectionViewController {
     
     func setupViews() {
-        view.addSubview(sectionTableView)
+        view.addSubview(contentView)
+        contentView.addSubview(sectionTableView)
     }
     
     func setupConstraints() {
+        contentView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
+            make.leading.trailing.equalToSuperview().inset(15)
+            make.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom)
+        }
         sectionTableView.snp.makeConstraints { make in
-            make.edges.equalTo(view.safeAreaLayoutGuide)
+            make.edges.equalToSuperview()
         }
     }
 }
