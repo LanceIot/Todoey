@@ -45,12 +45,10 @@ class ItemDescriptionViewController: UIViewController {
         setupConstraints()
     }
     
-    func configure(item: Todoeyitem) {
+    func configure(item: TodoeyBDItem) {
         DispatchQueue.main.async {
             self.titleLabel.text = item.name
             self.descLabel.text = item.desc
-            guard let imageData = item.image else { return }
-            self.myImageView.image = UIImage(data: imageData)
         }
     }
 }

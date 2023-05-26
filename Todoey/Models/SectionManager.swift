@@ -7,9 +7,10 @@
 
 import Foundation
 import UIKit
+import CoreData
 
 protocol SectionManagerDelegate {
-    func didUpdateSections(with models: [TodoeySection])
+    func didUpdateSections(with models: [TodoeyBDSection])
     func didFailWith(with error: Error)
 }
 
@@ -23,11 +24,7 @@ struct SectionManager {
     
     func fetchSections() {
         do {
-            let request = TodoeySection.fetchRequest()
-            
-            let desc = NSSortDescriptor(key: "name", ascending: true)
-            request.sortDescriptors = [desc]
-            
+            let request = TodoeyBDSection.fetchRequest()
             let models = try context.fetch(request)
             delegate?.didUpdateSections(with: models)
         } catch {
@@ -36,9 +33,10 @@ struct SectionManager {
     }
     
     func createSection(with name: String) {
-        let newSection = TodoeySection(context: context)
+        let newSection = TodoeyBDSection(context: context)
         newSection.name = name
-        newSection.createdAt = Date()
+        let colorInt = Constants.Colors.sections.randomElement()
+        newSection.color = colorInt ?? 0xa3a3a3
         do {
             try context.save()
             fetchSections()
@@ -47,7 +45,10 @@ struct SectionManager {
         }
     }
     
-    func deleteSection(section: TodoeySection) {
+    func deleteSection(section: TodoeyBDSection) {
+        for item in section.items! {
+            context.delete(item as! NSManagedObject)
+        }
         context.delete(section)
         do {
             try context.save()
@@ -57,7 +58,7 @@ struct SectionManager {
         }
     }
     
-    func updateSection(section: TodoeySection, newName: String) {
+    func updateSection(section: TodoeyBDSection, newName: String) {
         section.name = newName
         do {
             try context.save()

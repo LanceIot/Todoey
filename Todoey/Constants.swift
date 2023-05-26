@@ -1,48 +1,29 @@
+//
+//  Constants.swift
+//  Todoey
+//
+//  Created by Админ on 15.04.2023.
+//
+
 import Foundation
+import CoreGraphics
 import UIKit
 
 struct Constants {
     
-}
-
-//MARK: - Custom Views
-
-final class ViewTextField: UIView {
-    
-    var textField: UITextField = {
-        let textField = UITextField()
-        textField.font = UIFont.systemFont(ofSize: 25)
-        textField.textColor = .label
-        return textField
-    }()
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        
-        layer.borderColor = .init(red: 0, green: 0, blue: 0, alpha: 1)
-        layer.borderWidth = 2
-        layer.cornerRadius = 10
-        
-        addSubview(textField)
-        textField.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(15)
-        }
+    struct Values {
+        static let colors: [UIColor] = [.red, .yellow, .green]
     }
     
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    struct Identifiers {
+        static let itemTableViewCell = "ItemTableViewCell"
+        
+        static let cuSectionCollectionViewCell = "CUSectionCollectionViewCell"
+        static let mainSectionCollectionViewCell = "MainSectionCollectionViewCell"
     }
-}
-
-enum Priority: Int16, CaseIterable {
-    case high = 1, medium = 2, low = 3
-}
-
-extension Date {
     
-    static func toString(from date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        return formatter.string(from: date)
+    struct Colors {
+        static let selectedMainCell = 0x96b9ff
+        static let sections: [Int32] = [0xdf66e8, 0xdf66e8, 0x66e8e6, 0x66e87e, 0xd7e866, 0x86666]
     }
 }
